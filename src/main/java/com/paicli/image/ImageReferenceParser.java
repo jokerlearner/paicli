@@ -154,7 +154,15 @@ public class ImageReferenceParser {
     // 这里只关心拿到本地路径字符串，所以自己做一次宽容的 percent-decode：合法的 %XX 解码，
     // 其他字符（包括空格、中文、未编码字节）原样保留。
     private static String fileUriToLocalPath(String value) {
-        String afterScheme = value.substring("file://".length());
+        String afterScheme = percentDecodeUtf8(value.substring("file://".length()));
+
+        // Windows 应用经常给出非标准但很常见的 file://C:\path 或 file://C:/path。
+        // 标准 URI 则通常是 file:///C:/path。Path.of 在 Windows 上不能识别前者被旧逻辑
+        // 补成的 /C:\path，因此先单独识别盘符并去掉标准 URI 多出来的前导斜杠。
+        if (looksLikeWindowsDrivePath(afterScheme)) {
+            return afterScheme.charAt(0) == '/' ? afterScheme.substring(1) : afterScheme;
+        }
+
         String pathPart;
         if (afterScheme.startsWith("/")) {
             pathPart = afterScheme;
@@ -162,7 +170,15 @@ public class ImageReferenceParser {
             int slashIdx = afterScheme.indexOf('/');
             pathPart = slashIdx < 0 ? "/" + afterScheme : afterScheme.substring(slashIdx);
         }
-        return percentDecodeUtf8(pathPart);
+        return pathPart;
+    }
+
+    private static boolean looksLikeWindowsDrivePath(String value) {
+        int offset = value.startsWith("/") ? 1 : 0;
+        return value.length() >= offset + 3
+                && Character.isLetter(value.charAt(offset))
+                && value.charAt(offset + 1) == ':'
+                && (value.charAt(offset + 2) == '/' || value.charAt(offset + 2) == '\\');
     }
 
     private static String percentDecodeUtf8(String s) {

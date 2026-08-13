@@ -179,7 +179,7 @@ final class RipgrepCodeSearchEngine implements CodeSearchEngine {
     }
 
     private String pathText(JsonNode data) {
-        return data.path("path").path("text").asText();
+        return data.path("path").path("text").asText().replace('\\', '/');
     }
 
     private boolean isRipgrepAvailable() {

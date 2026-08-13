@@ -66,7 +66,9 @@ class MemoryManagerTest {
 
         MemoryEntry projectEntry = longTermMemory.search("Java", 5, memoryManager.getCurrentProject()).get(0);
         assertEquals("project", projectEntry.getMetadata().get("scope"));
-        assertTrue(projectEntry.getMetadata().get("project").endsWith("/repo/current"));
+        Path storedProject = Path.of(projectEntry.getMetadata().get("project")).normalize();
+        assertTrue(storedProject.endsWith(Path.of("repo", "current")),
+                "项目作用域应指向 repo/current，实际为: " + storedProject);
         assertEquals("global", longTermMemory.search("中文", 5).get(0).getMetadata().get("scope"));
     }
 

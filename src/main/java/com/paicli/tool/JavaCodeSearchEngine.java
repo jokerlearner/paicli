@@ -97,7 +97,9 @@ final class JavaCodeSearchEngine implements CodeSearchEngine {
                 return;
             }
             List<String> lines = Files.readAllLines(file, StandardCharsets.UTF_8);
-            String fileKey = relative.toString();
+            // 工具输出属于跨平台协议文本，统一使用正斜杠；否则同一搜索在 Windows
+            // 返回反斜杠、在 Linux/macOS 返回正斜杠，Agent 与黄金集都无法稳定消费。
+            String fileKey = relative.toString().replace('\\', '/');
             for (int i = 0; i < lines.size() && matches.size() < request.maxResults(); i++) {
                 int currentFileMatches = perFileMatches.getOrDefault(fileKey, 0);
                 if (currentFileMatches >= request.headLimit()) {
